@@ -11,10 +11,10 @@ FinAI Academy is a specialized AI training platform tailored for the Indian Bank
 
 ## Prerequisites
 
-*   **Node.js**: Version 18 or higher.
-*   **Gemini API Key**: You need a valid API key from Google AI Studio.
+*   **Node.js**: Version 18 or higher (LTS recommended).
+*   **Gemini API Key**: You need a valid API key from [Google AI Studio](https://aistudio.google.com/).
 
-## Installation & Setup
+## Quick Start (WSL / Ubuntu / macOS)
 
 1.  **Clone the repository**
     ```bash
@@ -23,37 +23,54 @@ FinAI Academy is a specialized AI training platform tailored for the Indian Bank
     ```
 
 2.  **Install Dependencies**
-    Run the following command to install the required libraries (React, Vite, Google GenAI SDK, etc.):
     ```bash
     npm install
     ```
 
 3.  **Configure Environment Variables**
-    Create a file named `.env` in the root directory of the project. Add your Gemini API Key:
-
+    Create a `.env` file in the root directory:
+    ```bash
+    cp .env.example .env 2>/dev/null || touch .env
+    ```
+    Open `.env` and add your API Key:
     ```env
     API_KEY=your_actual_api_key_here
     ```
-    *(Note: Do not commit this file to GitHub. It is already added to .gitignore).*
 
-4.  **Run the Project**
-    Start the local development server:
+4.  **Run Development Server**
     ```bash
     npm run dev
     ```
-    Open your browser and navigate to the URL shown in the terminal (usually `http://localhost:5173`).
+    Open your browser at `http://localhost:5173`.
+
+## Detailed Setup for WSL (Windows Subsystem for Linux)
+
+If you are setting this up on a fresh Ubuntu instance in WSL:
+
+1.  **Install Node.js via NVM**:
+    ```bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    source ~/.bashrc
+    nvm install --lts
+    ```
+
+2.  **Project Setup**:
+    Follow the "Quick Start" steps above.
+
+3.  **Troubleshooting**:
+    *   If `localhost:5173` does not open in Windows, verify you are running WSL 2 (`wsl -l -v` in PowerShell).
+    *   Ensure no other service is blocking port 5173.
 
 ## Project Structure
 
-*   `services/geminiService.ts`: Handles interactions with Google Gemini API.
-*   `components/`: Reusable UI components (CourseCard, ChatBot, CurriculumGenerator).
-*   `App.tsx`: Main application layout and logic.
+*   `services/geminiService.ts`: Interactions with Google Gemini API.
+*   `components/`: UI components (CourseCard, ChatBot, CurriculumGenerator).
+*   `App.tsx`: Main application layout.
 *   `types.ts`: TypeScript definitions.
 
 ## Tech Stack
 
-*   React 18
-*   TypeScript
-*   Tailwind CSS
-*   Google Gemini API (via `@google/genai`)
-*   Vite
+*   **Framework**: React 18 + Vite
+*   **Language**: TypeScript
+*   **Styling**: Tailwind CSS
+*   **AI**: Google Generative AI SDK (`@google/generative-ai`)

@@ -1,10 +1,18 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GeneratedCurriculum } from '../types';
 
-const getClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize the Google Generative AI SDK
+const genAI = new GoogleGenerativeAI(process.env.API_KEY || '');
 
 export const generateCurriculum = async (role: string, experience: string, focusArea: string): Promise<GeneratedCurriculum> => {
-  const ai = getClient();
+  // Use gemini-1.5-flash for speed and efficiency with this SDK
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json"
+    }
+  });
+
   const prompt = `
     Create a custom AI learning path for a professional in the Indian BFSI (Banking, Financial Services, Insurance) sector.
     Role: ${role}
@@ -14,41 +22,28 @@ export const generateCurriculum = async (role: string, experience: string, focus
     Ensure the content is relevant to the Indian market, referencing local technologies (UPI, India Stack) and regulations (RBI, SEBI, DPDP Act) where applicable.
 
     Return a structured JSON object with a summary and a list of 4-5 learning modules.
-    Each module should have a title, description, key topics (array of strings), and estimated hours.
+    
+    The JSON structure must match this schema exactly:
+    {
+      "role": "string",
+      "summary": "string",
+      "modules": [
+        {
+          "title": "string",
+          "description": "string",
+          "keyTopics": ["string", "string"],
+          "estimatedHours": number
+        }
+      ]
+    }
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            role: { type: Type.STRING },
-            summary: { type: Type.STRING },
-            modules: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  keyTopics: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  estimatedHours: { type: Type.NUMBER }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (response.text) {
-      return JSON.parse(response.text) as GeneratedCurriculum;
-    }
-    throw new Error("No response text generated");
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    return JSON.parse(text) as GeneratedCurriculum;
   } catch (error) {
     console.error("Gemini Curriculum Generation Error:", error);
     throw error;
@@ -56,13 +51,10 @@ export const generateCurriculum = async (role: string, experience: string, focus
 };
 
 export const chatWithAdvisor = async (history: {role: 'user' | 'model', text: string}[], userMessage: string): Promise<string> => {
-  const ai = getClient();
-  
-  // Convert simple history to Gemini Chat format
-  const chat = ai.chats.create({
-    model: "gemini-3-flash-preview",
-    config: {
-      systemInstruction: `You are 'Fin', a senior academic advisor at FinAI Academy India. 
+  // Use gemini-1.5-flash for the chat interface
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    systemInstruction: `You are 'Fin', a senior academic advisor at FinAI Academy India. 
       Your goal is to help professionals in the Indian banking and finance sector find the right AI courses.
       Be professional, concise, and helpful. Use Indian English spelling and context where appropriate.
       
@@ -73,14 +65,22 @@ export const chatWithAdvisor = async (history: {role: 'user' | 'model', text: st
       4. NLP for Indian Languages in Customer Service
       5. Risk Management & Credit Scoring (CIBIL/CRIF focus)
       
-      Always guide them towards enrolling. Keep answers under 100 words unless asked for details.`,
-    },
+      Always guide them towards enrolling. Keep answers under 100 words unless asked for details.`
+  });
+
+  const chat = model.startChat({
     history: history.map(h => ({
       role: h.role,
       parts: [{ text: h.text }]
     }))
   });
 
-  const result = await chat.sendMessage({ message: userMessage });
-  return result.text || "I apologize, I'm having trouble connecting to the server. Please check your connection.";
+  try {
+    const result = await chat.sendMessage(userMessage);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Gemini Chat Error:", error);
+    return "I apologize, I'm having trouble connecting to the server. Please check your connection or API key.";
+  }
 };
